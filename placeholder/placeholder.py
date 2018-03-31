@@ -8,7 +8,8 @@ from django.conf import settings
 
 DEBUG = os.environ.get('DEBUG', 'on') == 'on'
 SECRET_KEY = os.environ.get('SECRET_KEY', 'vb&v&ux$xn%uw7f#jf5afpii6*rw_kg6^wf7f)d2!*jl7$3b!#')
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
+BASE_DIR = os.path.dirname(__file__)
+# ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 
 settings.configure(
     DEBUG=DEBUG,
@@ -20,6 +21,10 @@ settings.configure(
         'django.middleware.csrf.CsrfViewMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
     ),
+    INSTALLED_APPS=('django.contrib.staticfiles',),
+    TEMPLATE_DIRS=(os.path.join(BASE_DIR, 'templates'),),
+    STATICFILES_DIRS=(os.path.join(BASE_DIR, 'static'),),
+    STATIC_URL='/static/',
 )
 
 from io import BytesIO
