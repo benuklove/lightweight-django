@@ -58,7 +58,9 @@ def placeholder(request, width, height):
         image = form.generate()
         return HttpResponse(image, content_type='image/png')
     else:
-        return HttpResponseBadRequest('Invalid Image Request')
+        return HttpResponseBadRequest('Invalid Image Request. -- '
+                                      'Like the developer said '
+                                      'while attending PyCon, "It\'s too big!"')
 
 def index(request):
     return HttpResponse('Hello World')
