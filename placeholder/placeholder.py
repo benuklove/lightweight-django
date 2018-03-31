@@ -8,8 +8,8 @@ from django.conf import settings
 
 DEBUG = os.environ.get('DEBUG', 'on') == 'on'
 SECRET_KEY = os.environ.get('SECRET_KEY', 'vb&v&ux$xn%uw7f#jf5afpii6*rw_kg6^wf7f)d2!*jl7$3b!#')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 BASE_DIR = os.path.dirname(__file__)
-# ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 
 settings.configure(
     DEBUG=DEBUG,
@@ -22,7 +22,12 @@ settings.configure(
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
     ),
     INSTALLED_APPS=('django.contrib.staticfiles',),
-    TEMPLATE_DIRS=(os.path.join(BASE_DIR, 'templates'),),
+    TEMPLATES=(
+        {
+            'BACKEND': 'django.template.backends.django.DjangoTemplates',
+            'DIRS': (os.path.join(BASE_DIR, 'templates'), ),
+        },
+    ),
     STATICFILES_DIRS=(os.path.join(BASE_DIR, 'static'),),
     STATIC_URL='/static/',
 )
@@ -31,14 +36,17 @@ from io import BytesIO
 from PIL import Image, ImageDraw
 from django.conf.urls import url
 from django.core.cache import cache
+from django.urls import reverse
 from django import forms
 from django.core.wsgi import get_wsgi_application
 from django.http import HttpResponse, HttpResponseBadRequest
+from django.shortcuts import render
 from django.views.decorators.http import etag
 
 
 class ImageForm(forms.Form):
     """Form to validate requested placeholder image."""
+
     height = forms.IntegerField(min_value=1, max_value=2000)
     width = forms.IntegerField(min_value=1, max_value=2000)
 
@@ -53,14 +61,14 @@ class ImageForm(forms.Form):
             draw = ImageDraw.Draw(image)
             text = '{} X {}'.format(width, height)
             textwidth, textheight = draw.textsize(text)
-        if textwidth < width and textheight < height:
-            texttop = (height - textheight) // 2
-            textleft = (width - textwidth) // 2
-            draw.text((textleft, texttop), text, fill=(255, 255, 255))
-        content = BytesIO()
-        image.save(content, image_format)
-        content.seek(0)
-        cache.set(key, content, 60 * 60)
+            if textwidth < width and textheight < height:
+                texttop = (height - textheight) // 2
+                textleft = (width - textwidth) // 2
+                draw.text((textleft, texttop), text, fill=(255, 255, 255))
+            content = BytesIO()
+            image.save(content, image_format)
+            content.seek(0)
+            cache.set(key, content, 60 * 60)
         return content
 
 def generate_etag(request, width, height):
@@ -79,7 +87,11 @@ def placeholder(request, width, height):
                                       'while attending PyCon, "It\'s too big!"')
 
 def index(request):
-    return HttpResponse('Hello World')
+    example = reverse('placeholder', kwargs={'width': 50, 'height':50})
+    context = {
+		'example': request.build_absolute_uri(example)
+	}
+    return render(request, 'home.html', context)
 
 urlpatterns = (
     url(r'^image/(?P<width>[0-9]+)x(?P<height>[0-9]+)/$', placeholder, name='placeholder'),
